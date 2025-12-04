@@ -38,8 +38,6 @@ def decode_access_token(token: str):
             algorithms=[api_config.ALGORITHM],
             options={"verify_exp": False},
         )
-
-        print(payload)
         return payload
     except jwt.ExpiredSignatureError:
         print({"error": "Token has expired"})

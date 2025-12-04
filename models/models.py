@@ -25,20 +25,30 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), nullable=False)
     email: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(
-        String(100), nullable=False
+        String(255), nullable=False
     )  # Зберігаємо хеш пароля
 
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
 
     repair_requests: Mapped[list["RepairRequest"]] = relationship(
-        "RepairRequest", backref="user", lazy="selectin"
+        "RepairRequest",
+        back_populates="user",
+        foreign_keys="RepairRequest.user_id",
+        lazy="selectin",
     )
+
     assigned_repairs: Mapped[list["RepairRequest"]] = relationship(
-        "RepairRequest", backref="admin", lazy="selectin"
+        "RepairRequest",
+        back_populates="admin",
+        foreign_keys="RepairRequest.admin_id",
+        lazy="selectin",
     )
 
     admin_messages: Mapped[list["AdminMessage"]] = relationship(
-        "AdminMessage", backref="admin", lazy="selectin"
+        "AdminMessage",
+        back_populates="admin",
+        foreign_keys="AdminMessage.admin_id",
+        lazy="selectin",
     )
 
     def __str__(self):
@@ -66,15 +76,24 @@ class RepairRequest(Base):
     admin_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=True)
 
     user: Mapped["User"] = relationship(
-        "User", backref="repair_requests", foreign_keys=[user_id], lazy="selectin"
+        "User",
+        back_populates="repair_requests",
+        foreign_keys=[user_id],
+        lazy="selectin",
     )
 
     admin: Mapped["User"] = relationship(
-        "User", backref="assigned_repairs", foreign_keys=[admin_id], lazy="selectin"
+        "User",
+        back_populates="assigned_repairs",
+        foreign_keys=[admin_id],
+        lazy="selectin",
     )
 
     messages: Mapped[list["AdminMessage"]] = relationship(
-        "AdminMessage", backref="repair_request", lazy="selectin"
+        "AdminMessage",
+        back_populates="repair_request",
+        foreign_keys="AdminMessage.request_id",
+        lazy="selectin",
     )
 
     def __str__(self):
@@ -96,10 +115,17 @@ class AdminMessage(Base):
     admin_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
     # зв’язки
-    to_repair_request: Mapped["RepairRequest"] = relationship(
-        "RepairRequest", back_populates="messages"
+    repair_request: Mapped["RepairRequest"] = relationship(
+        "RepairRequest",
+        back_populates="messages",
+        foreign_keys=[request_id],
     )
-    admin: Mapped["User"] = relationship("User", back_populates="admin_messages")
+
+    admin: Mapped["User"] = relationship(
+        "User",
+        back_populates="admin_messages",
+        foreign_keys=[admin_id],
+    )
 
 
 class Rewiews(Base):
