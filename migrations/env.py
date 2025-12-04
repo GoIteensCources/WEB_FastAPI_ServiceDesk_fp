@@ -9,7 +9,7 @@ from settings import api_config
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", api_config.alembic_uri_sqlite())
+config.set_main_option("sqlalchemy.url", api_config.alembic_uri_postgres())
 
 
 # Interpret the config file for Python logging.

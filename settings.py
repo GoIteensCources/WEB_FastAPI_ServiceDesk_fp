@@ -1,8 +1,12 @@
 import os
 
 import dotenv
-from sqlalchemy.ext.asyncio import (AsyncAttrs, AsyncEngine,
-                                    async_sessionmaker, create_async_engine)
+from sqlalchemy.ext.asyncio import (
+    AsyncAttrs,
+    AsyncEngine,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase
 
 dotenv.load_dotenv()
@@ -29,13 +33,16 @@ class DatabaseConfig:
     def alembic_uri_sqlite(self):
         return f"sqlite:///{self.DATABASE_NAME}.db"
 
+    def alembic_uri_postgres(self):
+        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@localhost:5432/{self.DATABASE_NAME}"
+
 
 api_config = DatabaseConfig()
 
 
 # Налаштування бази даних Postgres
 # engine = create_engine(api_config.uri_postgres(), echo=True)
-async_engine: AsyncEngine = create_async_engine(api_config.uri_sqlite(), echo=True)
+async_engine: AsyncEngine = create_async_engine(api_config.uri_postgres(), echo=True)
 async_session = async_sessionmaker(bind=async_engine)
 
 

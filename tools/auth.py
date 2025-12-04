@@ -5,7 +5,7 @@ import jwt
 from sqlalchemy import select
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from models.user import User
+from models.models import User
 from settings import api_config, async_session
 
 

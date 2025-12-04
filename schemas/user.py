@@ -5,9 +5,13 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
 
-
-class UserOut(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
+
+class UserInput(UserBase):
+    password: str
+
+
+class UserOut(UserBase):
     id: int
-    is_active: bool = True
+    is_admin: bool = False
