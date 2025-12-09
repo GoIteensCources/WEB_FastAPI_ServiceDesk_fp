@@ -1,8 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
-from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+
 
 from routes import auth_router, frontend_router, user_account_router
 
@@ -11,9 +10,11 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+app.include_router(frontend_router, prefix="", tags=["frontend"])
+
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(user_account_router, prefix="/account", tags=["account"])
-app.include_router(frontend_router, prefix="", tags=["frontend"])
+
 
 
 if __name__ == "__main__":
