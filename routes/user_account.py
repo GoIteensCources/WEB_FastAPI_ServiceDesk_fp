@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy import select
 
 from models import User, RepairRequest
@@ -20,37 +20,37 @@ d) Редагування створених заявок користуваче
 e) Видалення користувачем створеної заявки DELETE (/user/account/{repair_id})
 """
 
+
 @router.get("/user/me", response_model=UserOut)
-async def user_me_data(current_user: dict = Depends(get_current_user),
-                       db: AsyncSession = Depends(get_db),
-                       ):
-    user_id = current_user["sub"]   
+async def user_me_data(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user_id = current_user["sub"]
 
     stmt = select(User).where(User.id == int(user_id))
     user = await db.scalar(stmt)
     return user
 
 
-@router.post("/repair/add")
-async def create_repair_request(bgt: BackgroundTasks,
+@router.post("/repair/add", status_code=status.HTTP_201_CREATED)
+async def create_repair_request(
+    bgt: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
-                                db: AsyncSession = Depends(get_db),
-                                description: str = Form(...),
-                                image: UploadFile|None = File(None),
-                                required_time: datetime = Form(None)
-                                ):
-    
+    db: AsyncSession = Depends(get_db),
+    description: str = Form(...),
+    image: UploadFile | None = File(None),
+    required_time: datetime = Form(None),
+):
+
     user_id = current_user["sub"]
     image_url = None
     if image:
-        image_url = await generate_file_url(image.filename) # type: ignore
+        image_url = await generate_file_url(image.filename)  # type: ignore
         bgt.add_task(save_file, image, image_url)
 
     new_req = RepairRequest(
-        user_id = int(user_id),
-        description = description,
-        photo_url = image_url,
-        required_time = required_time
+        user_id=int(user_id), description=description, photo_url=image_url, required_time=required_time
     )
 
     db.add(new_req)
@@ -59,22 +59,64 @@ async def create_repair_request(bgt: BackgroundTasks,
     return new_req
 
 
-
 @router.get("/repairs")
-async def get_all_repairs(current_user: dict = Depends(get_current_user)):
-    return {"message": "Get all repair requests endpoint"}
+async def get_all_repairs(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    repairs = await db.scalars(select(RepairRequest).where(RepairRequest.user_id == int(current_user["sub"])))
+    return repairs.all()
 
 
 @router.get("/repair/{repair_id}")
-async def get_repair_request(repair_id: int, current_user: dict = Depends(get_current_user)):
-    return {"message": f"Get repair request {repair_id} endpoint"}
+async def get_repair_request(
+    repair_id: int, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    stmt = select(RepairRequest).where(RepairRequest.id == int(repair_id))
+    repair_request = await db.scalar(stmt)
+    return repair_request
 
 
 @router.put("/repair/{repair_id}")
-async def update_repair_request(repair_id: int, current_user: dict = Depends(get_current_user)):
-    return {"message": f"Update repair request {repair_id} endpoint"}   
+async def update_repair_request(
+    repair_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    description: str | None = Form(None),
+    image: UploadFile | None = File(None),
+    required_time: datetime | None = Form(None),
+):
+    stmt = select(RepairRequest).where(RepairRequest.id == repair_id, RepairRequest.user_id == int(current_user["sub"]))
+    result = await db.execute(stmt)
+    repair = result.scalar_one_or_none()
+    if not repair:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Repair request not found")
+
+    if description:
+        repair.description = description
+    if required_time:
+        repair.required_time = required_time
+
+    if image:
+        # видалити старе фото якщо є
+        # if repair.photo_url:
+        #     await save_file.delete_file(repair.photo_url)
+
+        image_url = await generate_file_url(image.filename)  # type: ignore
+        await save_file(image, image_url)
+        repair.photo_url = image_url
+
+    await db.commit()
+    await db.refresh(repair)
+
+    return repair
 
 
-@router.delete("/repair/{repair_id}")       
-async def delete_repair_request(repair_id: int, current_user: dict = Depends(get_current_user)):
+@router.delete("/repair/{repair_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_repair_request(
+    repair_id: int, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    stmt = select(RepairRequest).where(RepairRequest.id == repair_id, RepairRequest.user_id == int(current_user["sub"]))
+    result = await db.execute(stmt)
+    repair = result.scalar_one_or_none()
+    if not repair:
+        await db.delete(repair)
+        await db.commit()
     return {"message": f"Delete repair request {repair_id} endpoint"}

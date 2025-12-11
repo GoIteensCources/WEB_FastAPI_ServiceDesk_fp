@@ -27,13 +27,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 
 def require_admin(user: dict = Depends(get_current_user)):
     if not user["is_admin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
     return user
 
 
 # ==================== AUTH ROUTES ====================
+
 
 @router.post("/token")
 async def generate_token(form_data: OAuth2PasswordRequestForm = Depends()):

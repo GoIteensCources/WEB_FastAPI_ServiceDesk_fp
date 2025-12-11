@@ -24,9 +24,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), nullable=False)
     email: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(
-        String(255), nullable=False
-    )  # Зберігаємо хеш пароля
+    password: Mapped[str] = mapped_column(String(255), nullable=False)  # Зберігаємо хеш пароля
 
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -64,14 +62,11 @@ class RepairRequest(Base):
 
     required_time: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[RequestStatus] = mapped_column(
-        SQLEnum(RequestStatus, name="request_status"), 
-        default=RequestStatus.NEW.value
+        SQLEnum(RequestStatus, name="request_status"), default=RequestStatus.NEW.value
     )
 
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[dt.datetime] = mapped_column(
-        DateTime, default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[dt.datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     admin_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=True)
@@ -106,13 +101,9 @@ class AdminMessage(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[dt.datetime] = mapped_column(
-        DateTime(timezone=True), default=func.now()
-    )
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=func.now())
 
-    request_id: Mapped[int] = mapped_column(
-        ForeignKey("repair_requests.id"), nullable=False
-    )
+    request_id: Mapped[int] = mapped_column(ForeignKey("repair_requests.id"), nullable=False)
     admin_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
     # зв’язки
@@ -137,3 +128,13 @@ class Rewiews(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=func.now())
+
+
+class Users_in_telegram(Base):
+    __tablename__ = "users_in_telegram"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tg_code: Mapped[str] = mapped_column(String(25))
+
+    user_tg_id: Mapped[str] = mapped_column(String(255), nullable=True)
+    user_in_site: Mapped[int] = mapped_column(ForeignKey("users.id"))

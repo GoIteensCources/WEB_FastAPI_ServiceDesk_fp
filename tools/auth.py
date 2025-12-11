@@ -18,15 +18,11 @@ def create_access_token(payload: dict, expires_delta: timedelta | None = None):
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=api_config.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = datetime.now(timezone.utc) + timedelta(minutes=api_config.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     payload.update({"exp": expire})
     print(payload)
-    jwt_token = jwt.encode(
-        payload, api_config.SECRET_KEY, algorithm=api_config.ALGORITHM
-    )
+    jwt_token = jwt.encode(payload, api_config.SECRET_KEY, algorithm=api_config.ALGORITHM)
     return jwt_token
 
 
