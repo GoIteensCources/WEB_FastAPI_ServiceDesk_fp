@@ -70,10 +70,17 @@ async def get_all_repairs(current_user: dict = Depends(get_current_user), db: As
 async def get_repairs_by_tg_id(
     tg_id: int = Query(),  db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Users_in_telegram).where(Users_in_telegram.user_tg_id == str(tg_id))
-    user_tg = await db.scalar(stmt)
-    repairs = await db.scalars(select(RepairRequest).where(RepairRequest.user_id == int(user_tg.user_in_site)))
-    return repairs.all()
+    stmt = (
+        select(RepairRequest)
+        .join(
+            Users_in_telegram,
+            RepairRequest.user_id == Users_in_telegram.user_in_site,
+        )
+        .where(Users_in_telegram.user_tg_id == str(tg_id))
+    )
+
+    result = await db.scalars(stmt)
+    return result.all()
 
 
 @router.get("/repair/{repair_id}")
