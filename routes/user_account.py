@@ -1,7 +1,8 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
 
 from models import User, RepairRequest
+from models.models import Users_in_telegram
 from routes.auth import get_current_user, require_admin
 from schemas.user import UserOut
 from settings import get_db
@@ -26,6 +27,7 @@ async def user_me_data(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    
     user_id = current_user["sub"]
 
     stmt = select(User).where(User.id == int(user_id))
@@ -62,6 +64,15 @@ async def create_repair_request(
 @router.get("/repairs")
 async def get_all_repairs(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     repairs = await db.scalars(select(RepairRequest).where(RepairRequest.user_id == int(current_user["sub"])))
+    return repairs.all()
+
+@router.get("/repairs")
+async def get_repairs_by_tg_id(
+    tg_id: int = Query(),  db: AsyncSession = Depends(get_db)
+):
+    stmt = select(Users_in_telegram).where(Users_in_telegram.user_tg_id == str(tg_id))
+    user_tg = await db.scalar(stmt)
+    repairs = await db.scalars(select(RepairRequest).where(RepairRequest.user_id == int(user_tg.user_in_site)))
     return repairs.all()
 
 

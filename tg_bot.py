@@ -6,6 +6,8 @@ from aiogram.filters import Command
 from sqlalchemy import select
 from models import User, Users_in_telegram
 from settings import async_session
+import httpx
+
 
 load_dotenv()
 
@@ -27,6 +29,14 @@ async def send_msg(user_site_id, message):
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
     await message.answer("Вітаю! Це бот служби підтримки. Будь ласка, введіть ваш унікальний код для авторизації.")
+
+
+@dp.message(Command("repairs"))
+async def my_repairs(message: types.Message):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"http://localhost:8000/repairs/?tg_id={message.chat.id}")
+    await message.answer(f"ваші запити на ремонт: {response.json()}")
+
 
 
 @dp.message()
